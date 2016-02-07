@@ -1,0 +1,77 @@
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<style>
+  body {
+    font: 13px sans-serif;
+    width: 960px;
+    height: 500px;
+  }
+
+  circle,
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+  }
+
+  circle {
+    fill: #fff;
+    fill-opacity: .2;
+  }
+
+  rect {
+    fill: none;
+  }
+</style>
+
+<body>
+</body>
+
+<script>
+  var width = 960,
+      height = 500;
+
+  var points = d3.range(1, 5).map(function(i) {
+    return [i * width / 5, 50 + Math.random() * (height - 100)];
+  });
+
+  var line = d3.svg.line().interpolate("basis");
+
+  var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("tabindex", 1);
+
+  svg.append("rect")
+      .attr("width", width)
+      .attr("height", height)
+
+  svg.append("path")
+      .datum(points)
+        .attr("class", "line")
+        .call(redraw);
+
+  function redraw() {
+    svg.select("path").attr("d", line);
+
+    var circle = svg.selectAll("circle")
+        .data(points, function(d) { return d; });
+
+    circle.enter().append("circle")
+        .attr("r", 1e-6)
+      .transition()
+        .duration(750)
+        .ease("elastic")
+        .attr("r", 6.5);
+
+    circle.attr("cx", function(d) { return d[0]; })
+        .attr("cy", function(d) { return d[1]; });
+
+    circle.exit().remove();
+
+    if (d3.event) {
+      d3.event.preventDefault();
+      d3.event.stopPropagation();
+    }
+  }
+</script>
