@@ -28,12 +28,37 @@
 </body>
 
 <script>
-  var width = 960,
-      height = 500;
+  var width = 960, height = 500;
 
-  var points = d3.range(1, 5).map(function(i) {
-    return [i * width / 5, 50 + Math.random() * (height - 100)];
+  //var point1 = [10, height - 10];
+  //var point6 = [width - 10, height - 10];
+
+  var point1 = [0, 0];
+  var point2 = [Math.random() * 25 + 25, Math.random() * 20 -10];
+  var point3 = [Math.random() * point2[0], Math.random() * 50 + 50];
+  var point5 = [Math.random() * 25 + 50, Math.random() * 20 -10];
+  var point4 = [Math.random() * (100 - point5[0]) + point5[0], Math.random() * 50 + 50];
+  var point6 = [100, 0];
+
+  var points = [point1, point2, point3, point4, point5, point6];
+
+  points = points.map(function(p) {
+    var x = p[0] / 100;
+    var y = p[1] / 100;
+    x = x * (width - 20) + 10;
+    y = height - (y * (height - 20) + 10);
+    return [x, y];
   });
+
+
+  //var interiorPointCount = 4;
+  //var points = d3.range(1, interiorPointCount + 1).map(function(i) {
+  //  return [i * width / (interiorPointCount + 2), 50 + Math.random() * (height - 100)];
+  //});
+
+  //points.unshift(firstPoint);
+  //points.push(lastPoint);
+
 
   var line = d3.svg.line().interpolate("basis");
 
