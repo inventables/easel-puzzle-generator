@@ -58,28 +58,33 @@
 
   var lines = [];
 
-  var rowCount = 10;
-  var rowHeight = height / rowCount;
+  var buildHorizontalLines = function() {
+    var rowCount = 10;
+    var rowHeight = height / rowCount;
 
-  var columnCount = 10;
-  var columnWidth = width / columnCount;
+    var columnCount = 10;
+    var columnWidth = width / columnCount;
 
-  for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
-    for (var columnIndex=0; columnIndex < columnCount; columnIndex++) {
-      var points = edgeDistributions();
+    for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
+      for (var columnIndex=0; columnIndex < columnCount; columnIndex++) {
+        var points = edgeDistributions();
 
-      points = points.map(function(p) {
-        var columnOffset = columnWidth * columnIndex;
-        var x = p[0] * columnWidth + columnOffset;
-        var rowOffset = rowHeight * rowIndex;
-        var y = height - (p[1] * rowHeight + rowOffset);
+        points = points.map(function(p) {
+          var columnOffset = columnWidth * columnIndex;
+          var x = p[0] * columnWidth + columnOffset;
+          var rowOffset = rowHeight * rowIndex;
+          var y = height - (p[1] * rowHeight + rowOffset);
 
-        return [x, y];
-      });
+          return [x, y];
+        });
 
-      lines.push(points);
+        lines.push(points);
+      }
     }
-  }
+  };
+  buildHorizontalLines();
+
+
   var lineData = svg.selectAll("path").data(lines);
 
   lineData.enter().append("path")
