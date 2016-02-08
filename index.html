@@ -47,14 +47,6 @@
     });
   };
 
-  var points = edgeDistributions();
-
-  points = points.map(function(p) {
-    var x = p[0] * (width - 20) + 10;
-    var y = height - (p[1] * (height - 20) + 10);
-    return [x, y];
-  });
-
   var line = d3.svg.line().interpolate("basis");
 
   var svg = d3.select("body").append("svg")
@@ -66,28 +58,32 @@
       .attr("width", width)
       .attr("height", height)
 
-  svg.append("path")
-      .datum(points)
+  var lines = [];
+
+  var rowCount = 10;
+  var rowHeight = (height - 20)/ rowCount;
+
+  for (var i=0; i<rowCount; i++) {
+    var points = edgeDistributions();
+
+    points = points.map(function(p) {
+      var x = p[0] * (width - 20) + 10;
+      var baseline = rowHeight * i;
+      var y = height - (p[1] * rowHeight + baseline + 10);
+
+      return [x, y];
+    });
+
+    lines.push(points);
+  }
+  var lineData = svg.selectAll("path").data(lines);
+
+  lineData.enter().append("path")
         .attr("class", "line")
         .call(redraw);
 
   function redraw() {
-    svg.select("path").attr("d", line);
-
-    var circle = svg.selectAll("circle")
-        .data(points, function(d) { return d; });
-
-    circle.enter().append("circle")
-        .attr("r", 1e-6)
-      .transition()
-        .duration(750)
-        .ease("elastic")
-        .attr("r", 6.5);
-
-    circle.attr("cx", function(d) { return d[0]; })
-        .attr("cy", function(d) { return d[1]; });
-
-    circle.exit().remove();
+    svg.selectAll("path").attr("d", line);
 
     if (d3.event) {
       d3.event.preventDefault();
