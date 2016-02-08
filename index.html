@@ -61,12 +61,12 @@
   var rowCount = 10;
   var rowHeight = height / rowCount;
 
-  for (var i=1; i<rowCount; i++) {
+  for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
     var points = edgeDistributions();
 
     points = points.map(function(p) {
       var x = p[0] * width;
-      var baseline = rowHeight * i;
+      var baseline = rowHeight * rowIndex;
       var y = height - (p[1] * rowHeight + baseline);
 
       return [x, y];
