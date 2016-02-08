@@ -59,15 +59,15 @@
   var lines = [];
 
   var rowCount = 10;
-  var rowHeight = (height - 20)/ rowCount;
+  var rowHeight = height / rowCount;
 
-  for (var i=0; i<rowCount; i++) {
+  for (var i=1; i<rowCount; i++) {
     var points = edgeDistributions();
 
     points = points.map(function(p) {
-      var x = p[0] * (width - 20) + 10;
+      var x = p[0] * width;
       var baseline = rowHeight * i;
-      var y = height - (p[1] * rowHeight + baseline + 10);
+      var y = height - (p[1] * rowHeight + baseline);
 
       return [x, y];
     });
