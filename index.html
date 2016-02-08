@@ -33,14 +33,22 @@
   //var point1 = [10, height - 10];
   //var point6 = [width - 10, height - 10];
 
-  var point1 = [0, 0];
-  var point2 = [Math.random() * 25 + 25, Math.random() * 20 -10];
-  var point3 = [Math.random() * point2[0], Math.random() * 50 + 50];
-  var point5 = [Math.random() * 25 + 50, Math.random() * 20 -10];
-  var point4 = [Math.random() * (100 - point5[0]) + point5[0], Math.random() * 50 + 50];
-  var point6 = [100, 0];
+  var randomBetween = function(min, max) {
+    return Math.random() * (max - min) + min;
+  };
 
-  var points = [point1, point2, point3, point4, point5, point6];
+  var edgeDistributions = function() {
+    var point1 = [0, 0];
+    var point2 = [randomBetween(25, 50), randomBetween(-10, 10)];
+    var point3 = [randomBetween(0, point2[0]), randomBetween(50, 100)];
+    var point5 = [randomBetween(25, 50), randomBetween(-10, 10)];
+    var point4 = [randomBetween(point5[0], 100), randomBetween(50, 100)];
+    var point6 = [100, 0];
+
+    return [point1, point2, point3, point4, point5, point6];
+  };
+
+  var points = edgeDistributions();
 
   points = points.map(function(p) {
     var x = p[0] / 100;
