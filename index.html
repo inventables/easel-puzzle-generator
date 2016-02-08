@@ -30,9 +30,6 @@
 <script>
   var width = 960, height = 500;
 
-  //var point1 = [10, height - 10];
-  //var point6 = [width - 10, height - 10];
-
   var randomBetween = function(min, max) {
     return Math.random() * (max - min) + min;
   };
@@ -57,16 +54,6 @@
     y = height - (y * (height - 20) + 10);
     return [x, y];
   });
-
-
-  //var interiorPointCount = 4;
-  //var points = d3.range(1, interiorPointCount + 1).map(function(i) {
-  //  return [i * width / (interiorPointCount + 2), 50 + Math.random() * (height - 100)];
-  //});
-
-  //points.unshift(firstPoint);
-  //points.push(lastPoint);
-
 
   var line = d3.svg.line().interpolate("basis");
 
