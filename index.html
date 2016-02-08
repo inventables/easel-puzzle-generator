@@ -84,6 +84,31 @@
   };
   buildHorizontalLines();
 
+  var buildVerticalLines = function() {
+    var rowCount = 10;
+    var rowHeight = height / rowCount;
+
+    var columnCount = 10;
+    var columnWidth = width / columnCount;
+
+    for (var columnIndex=1; columnIndex < columnCount; columnIndex++) {
+      for (var rowIndex=0; rowIndex < rowCount; rowIndex++) {
+        var points = edgeDistributions();
+
+        points = points.map(function(p) {
+          var columnOffset = columnWidth * columnIndex;
+          var x = p[1] * columnWidth + columnOffset;
+          var rowOffset = rowHeight * rowIndex;
+          var y = height - (p[0] * rowHeight + rowOffset);
+
+          return [x, y];
+        });
+
+        lines.push(points);
+      }
+    }
+  };
+  buildVerticalLines();
 
   var lineData = svg.selectAll("path").data(lines);
 
