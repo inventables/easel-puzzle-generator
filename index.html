@@ -42,16 +42,17 @@
 
   var edgeDistributions = function() {
     var baselineOffsets = {
-      xMin: 36,
-      xMax: 48,
+      xMin: 52,
+      xMax: 62,
       yMin: -15,
       yMax: 5
     };
 
     var upperOffsets = {
-      xMin: 30,
+      xMin: 20,
+      xMax: 30,
       yMin: 20,
-      yMax: 48
+      yMax: 44
     };
 
     var point1 = [0, 0];
@@ -60,15 +61,15 @@
       randomBetween(baselineOffsets.yMin, baselineOffsets.yMax)
     ];
     var point3 = [
-      randomBetween(upperOffsets.xMin, point2[0]),
+      randomBetween(upperOffsets.xMin, upperOffsets.xMax),
       randomBetween(upperOffsets.yMin, upperOffsets.yMax)
     ];
     var point4 = [
-      randomBetween(100-baselineOffsets.xMax, 100-upperOffsets.xMin),
+      randomBetween(100-upperOffsets.xMax, 100-upperOffsets.xMin),
       randomBetween(upperOffsets.yMin, upperOffsets.yMax)
     ];
     var point5 = [
-      randomBetween(100-baselineOffsets.xMax, point4[0]),
+      randomBetween(100-baselineOffsets.xMax, 100-baselineOffsets.xMin),
       randomBetween(baselineOffsets.yMin, baselineOffsets.yMax)
     ];
     var point6 = [100, 0];
