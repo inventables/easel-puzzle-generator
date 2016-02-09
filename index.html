@@ -33,12 +33,36 @@
   };
 
   var edgeDistributions = function() {
-    var minYOffset = 20, maxYOffset = 60;
+    var baselineOffsets = {
+      xMin: 33,
+      xMax: 48,
+      yMin: -15,
+      yMax: 5
+    };
+
+    var upperOffsets = {
+      xMin: 28,
+      yMin: 20,
+      yMax: 50
+    };
+
     var point1 = [0, 0];
-    var point2 = [randomBetween(30, 50), randomBetween(-10, 10)];
-    var point3 = [randomBetween(25, point2[0]), randomBetween(minYOffset, maxYOffset)];
-    var point4 = [randomBetween(50, 75), randomBetween(minYOffset, maxYOffset)];
-    var point5 = [randomBetween(50, point4[0]), randomBetween(-10, 10)];
+    var point2 = [
+      randomBetween(baselineOffsets.xMin, baselineOffsets.xMax),
+      randomBetween(baselineOffsets.yMin, baselineOffsets.yMax)
+    ];
+    var point3 = [
+      randomBetween(upperOffsets.xMin, point2[0]),
+      randomBetween(upperOffsets.yMin, upperOffsets.yMax)
+    ];
+    var point4 = [
+      randomBetween(100-baselineOffsets.xMax, 100-upperOffsets.xMin),
+      randomBetween(upperOffsets.yMin, upperOffsets.yMax)
+    ];
+    var point5 = [
+      randomBetween(100-baselineOffsets.xMax, point4[0]),
+      randomBetween(baselineOffsets.yMin, baselineOffsets.yMax)
+    ];
     var point6 = [100, 0];
 
     var sign = Math.random() < 0.5 ? -1 : 1;
