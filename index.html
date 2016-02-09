@@ -23,6 +23,12 @@
 </style>
 
 <body>
+  <form>
+    <label for="rowCount">Rows:</label>
+    <input type="number" id="rowCount" min="1" max="10" value="10"/>
+    <label for="columnCount">Columns:</label>
+    <input type="number" id="columnCount" min="1" max="10" value="10"/>
+  </form>
 </body>
 
 <script>
@@ -31,6 +37,8 @@
   var randomBetween = function(min, max) {
     return Math.random() * (max - min) + min;
   };
+  var rowCount = 10;
+  var columnCount = 10;
 
   var edgeDistributions = function() {
     var baselineOffsets = {
@@ -83,13 +91,35 @@
       .attr("width", width)
       .attr("height", height)
 
-  var lines = [];
+  var changeRowCount = function() {
+    rowCount = this.value;
+    rebuildLines()
+  };
+
+  var changeColumnCount = function() {
+    columnCount = this.value;
+    rebuildLines()
+  };
+
+  d3.select("#rowCount").on("change", changeRowCount);
+  d3.select("#columnCount").on("change", changeColumnCount);
+
+  var lines;
+  var lineData;
+
+  var rebuildLines = function() {
+    lines = [];
+    buildHorizontalLines();
+    buildVerticalLines();
+    lineData = svg.selectAll("path").data(lines);
+    lineData.enter().append("path")
+          .attr("class", "line")
+          .call(redraw);
+    lineData.exit().remove()
+  };
 
   var buildHorizontalLines = function() {
-    var rowCount = 10;
     var rowHeight = height / rowCount;
-
-    var columnCount = 10;
     var columnWidth = width / columnCount;
 
     for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
@@ -109,13 +139,9 @@
       }
     }
   };
-  buildHorizontalLines();
 
   var buildVerticalLines = function() {
-    var rowCount = 10;
     var rowHeight = height / rowCount;
-
-    var columnCount = 10;
     var columnWidth = width / columnCount;
 
     for (var columnIndex=1; columnIndex < columnCount; columnIndex++) {
@@ -135,13 +161,6 @@
       }
     }
   };
-  buildVerticalLines();
-
-  var lineData = svg.selectAll("path").data(lines);
-
-  lineData.enter().append("path")
-        .attr("class", "line")
-        .call(redraw);
 
   function redraw() {
     svg.selectAll("path").attr("d", line);
@@ -151,4 +170,6 @@
       d3.event.stopPropagation();
     }
   }
+
+  rebuildLines();
 </script>
