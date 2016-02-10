@@ -105,12 +105,10 @@
   d3.select("#rowCount").on("change", changeRowCount);
   d3.select("#columnCount").on("change", changeColumnCount);
 
-  var lineData;
-
   var rebuildLines = function() {
     var lines = buildHorizontalLines();
     lines = lines.concat(buildVerticalLines());
-    lineData = svg.selectAll("path").data(lines);
+    var lineData = svg.selectAll("path").data(lines);
     lineData.enter().append("path")
           .attr("class", "line")
           .call(redraw);
