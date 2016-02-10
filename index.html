@@ -167,11 +167,6 @@
 
   function redraw() {
     svg.selectAll("path").attr("d", line);
-
-    if (d3.event) {
-      d3.event.preventDefault();
-      d3.event.stopPropagation();
-    }
   }
 
   rebuildLines();
