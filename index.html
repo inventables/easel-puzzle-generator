@@ -105,13 +105,11 @@
   d3.select("#rowCount").on("change", changeRowCount);
   d3.select("#columnCount").on("change", changeColumnCount);
 
-  var lines;
   var lineData;
 
   var rebuildLines = function() {
-    lines = [];
-    buildHorizontalLines();
-    buildVerticalLines();
+    var lines = buildHorizontalLines();
+    lines = lines.concat(buildVerticalLines());
     lineData = svg.selectAll("path").data(lines);
     lineData.enter().append("path")
           .attr("class", "line")
@@ -120,6 +118,7 @@
   };
 
   var buildHorizontalLines = function() {
+    var lines = [];
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
 
@@ -139,9 +138,12 @@
         lines.push(points);
       }
     }
+
+    return lines;
   };
 
   var buildVerticalLines = function() {
+    var lines = [];
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
 
@@ -161,6 +163,8 @@
         lines.push(points);
       }
     }
+
+    return lines;
   };
 
   function redraw() {
