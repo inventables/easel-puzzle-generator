@@ -1,4 +1,6 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3-path.v0.1.min.js"></script>
+<script src="https://d3js.org/d3-shape.v0.5.min.js"></script>
 
 <style>
   body {
@@ -124,6 +126,8 @@
         });
 
         lines.push(points);
+
+        console.log("Line row " + rowIndex + ", column " + columnIndex + ": " + d3_shape.line().curve(d3_shape.curveBasis)(points));
       }
     }
 
