@@ -4,7 +4,7 @@ var properties = [
 ];
 
 var executor = function(args, success, failure) {
-  var width = 480, height = 480;
+  var width = 450, height = 450;
 
   var params = args[0];
   var rowCount = params.Rows;
@@ -70,19 +70,37 @@ var executor = function(args, success, failure) {
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
 
+    var mapPoint = function(point, columnIndex, rowIndex) {
+      var x = offsetColumnPosition(point[0], columnWidth, columnIndex);
+      var y = height - offsetRowPosition(point[1], rowHeight, rowIndex);
+
+      return [x, y];
+    };
+
+    for (var columnIndex=0; columnIndex < columnCount; columnIndex++) {
+      var points = [[0, 0], [1,0]];
+      points = points.map(function(point) {
+        return mapPoint(point, columnIndex, 0);
+      });
+      lines.push(points);
+    }
+
     for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
-      for (var columnIndex=0; columnIndex < columnCount; columnIndex++) {
-        var points = edgeDistributions();
-
-        points = points.map(function(p) {
-          var x = offsetColumnPosition(p[0], columnWidth, columnIndex);
-          var y = height - offsetRowPosition(p[1], rowHeight, rowIndex);
-
-          return [x, y];
+      for (columnIndex=0; columnIndex < columnCount; columnIndex++) {
+        points = edgeDistributions();
+        points = points.map(function(point) {
+          return mapPoint(point, columnIndex, rowIndex);
         });
-
         lines.push(points);
       }
+    }
+
+    for (columnIndex=0; columnIndex < columnCount; columnIndex++) {
+      points = [[0, 0], [1,0]];
+      points = points.map(function(point) {
+        return mapPoint(point, columnIndex, rowCount);
+      });
+      lines.push(points);
     }
 
     return lines;
@@ -93,19 +111,39 @@ var executor = function(args, success, failure) {
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
 
+    var mapPoint = function(point, columnIndex, rowIndex) {
+      var x = offsetColumnPosition(point[1], columnWidth, columnIndex);
+      var y = height - offsetRowPosition(point[0], rowHeight, rowIndex);
+
+      return [x, y];
+    };
+
+    for (var rowIndex=0; rowIndex < rowCount; rowIndex++) {
+      var points = [[0, 0], [1,0]];
+      points = points.map(function(point) {
+        return mapPoint(point, 0, rowIndex);
+      });
+      lines.push(points);
+    }
+
     for (var columnIndex=1; columnIndex < columnCount; columnIndex++) {
-      for (var rowIndex=0; rowIndex < rowCount; rowIndex++) {
-        var points = edgeDistributions();
+      for (rowIndex=0; rowIndex < rowCount; rowIndex++) {
+        points = edgeDistributions();
 
-        points = points.map(function(p) {
-          var x = offsetColumnPosition(p[1], columnWidth, columnIndex);
-          var y = height - offsetRowPosition(p[0], rowHeight, rowIndex);
-
-          return [x, y];
+        points = points.map(function(point) {
+          return mapPoint(point, columnIndex, rowIndex);
         });
 
         lines.push(points);
       }
+    }
+
+    for (rowIndex=0; rowIndex < rowCount; rowIndex++) {
+      var points = [[0, 0], [1,0]];
+      points = points.map(function(point) {
+        return mapPoint(point, columnCount, rowIndex);
+      });
+      lines.push(points);
     }
 
     return lines;
