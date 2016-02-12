@@ -55,6 +55,16 @@ var executor = function(args, success, failure) {
     });
   };
 
+  var offsetColumnPosition = function(percent, columnWidth, columnIndex) {
+    var columnOffset = columnWidth * columnIndex;
+    return percent * columnWidth + columnOffset;
+  };
+
+  var offsetRowPosition = function(percent, rowHeight, rowIndex) {
+    var rowOffset = rowHeight * rowIndex;
+    return percent * rowHeight + rowOffset;
+  };
+
   var buildHorizontalLines = function() {
     var lines = [];
     var rowHeight = height / rowCount;
@@ -65,10 +75,8 @@ var executor = function(args, success, failure) {
         var points = edgeDistributions();
 
         points = points.map(function(p) {
-          var columnOffset = columnWidth * columnIndex;
-          var x = p[0] * columnWidth + columnOffset;
-          var rowOffset = rowHeight * rowIndex;
-          var y = height - (p[1] * rowHeight + rowOffset);
+          var x = offsetColumnPosition(p[0], columnWidth, columnIndex);
+          var y = height - offsetRowPosition(p[1], rowHeight, rowIndex);
 
           return [x, y];
         });
@@ -90,10 +98,8 @@ var executor = function(args, success, failure) {
         var points = edgeDistributions();
 
         points = points.map(function(p) {
-          var columnOffset = columnWidth * columnIndex;
-          var x = p[1] * columnWidth + columnOffset;
-          var rowOffset = rowHeight * rowIndex;
-          var y = height - (p[0] * rowHeight + rowOffset);
+          var x = offsetColumnPosition(p[1], columnWidth, columnIndex);
+          var y = height - offsetRowPosition(p[0], rowHeight, rowIndex);
 
           return [x, y];
         });
@@ -109,7 +115,6 @@ var executor = function(args, success, failure) {
   var xmlHeader = '<?xml version="1.0" standalone="no"?>';
   var svgOpenTag = '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="500" height="500">';
   var svgCloseTag = '</svg>';
-  var rect = '<rect stroke-width="1" stroke="#999" fill="none" x="0" y="0" width="' + width + '" height="' + height + '" />';
   var pathElement = function(pathData) {
     return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
   };
@@ -125,7 +130,6 @@ var executor = function(args, success, failure) {
   var svg = [
     xmlHeader,
     svgOpenTag,
-    rect,
     paths.join(""),
     svgCloseTag
   ].join("");
