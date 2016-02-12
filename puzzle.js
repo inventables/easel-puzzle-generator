@@ -66,7 +66,7 @@ var executor = function(args, success, failure) {
   };
 
   var buildHorizontalLines = function() {
-    var lines = [];
+    var rows = [];
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
 
@@ -77,6 +77,7 @@ var executor = function(args, success, failure) {
       return [x, y];
     };
 
+    var lines = [];
     for (var columnIndex=0; columnIndex < columnCount; columnIndex++) {
       var points = [[0, 0], [1,0]];
       points = points.map(function(point) {
@@ -84,8 +85,10 @@ var executor = function(args, success, failure) {
       });
       lines.push(points);
     }
+    rows.push(lines)
 
     for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
+      lines = []
       for (columnIndex=0; columnIndex < columnCount; columnIndex++) {
         points = edgeDistributions();
         points = points.map(function(point) {
@@ -93,8 +96,10 @@ var executor = function(args, success, failure) {
         });
         lines.push(points);
       }
+      rows.push(lines);
     }
 
+    lines = [];
     for (columnIndex=0; columnIndex < columnCount; columnIndex++) {
       points = [[0, 0], [1,0]];
       points = points.map(function(point) {
@@ -102,12 +107,13 @@ var executor = function(args, success, failure) {
       });
       lines.push(points);
     }
+    rows.push(lines);
 
-    return lines;
+    return rows;
   };
 
   var buildVerticalLines = function() {
-    var lines = [];
+    var columns = [];
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
 
@@ -118,6 +124,7 @@ var executor = function(args, success, failure) {
       return [x, y];
     };
 
+    var lines = [];
     for (var rowIndex=0; rowIndex < rowCount; rowIndex++) {
       var points = [[0, 0], [1,0]];
       points = points.map(function(point) {
@@ -125,8 +132,10 @@ var executor = function(args, success, failure) {
       });
       lines.push(points);
     }
+    columns.push(lines);
 
     for (var columnIndex=1; columnIndex < columnCount; columnIndex++) {
+      lines = [];
       for (rowIndex=0; rowIndex < rowCount; rowIndex++) {
         points = edgeDistributions();
 
@@ -136,8 +145,10 @@ var executor = function(args, success, failure) {
 
         lines.push(points);
       }
+      columns.push(lines);
     }
 
+    lines = [];
     for (rowIndex=0; rowIndex < rowCount; rowIndex++) {
       var points = [[0, 0], [1,0]];
       points = points.map(function(point) {
@@ -145,8 +156,9 @@ var executor = function(args, success, failure) {
       });
       lines.push(points);
     }
+    columns.push(lines);
 
-    return lines;
+    return columns;
   };
 
   // SVG helper functions
@@ -154,16 +166,25 @@ var executor = function(args, success, failure) {
   var svgOpenTag = '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="500" height="500">';
   var svgCloseTag = '</svg>';
   var pathElement = function(pathData) {
-    return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
+    return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + d + '"/>';
   };
 
   var d3Line = d3_shape.line().curve(d3_shape.curveBasis);
 
-  var lines = buildHorizontalLines().concat(buildVerticalLines());
+  var rows = buildHorizontalLines()
+  var columns = buildVerticalLines();
 
-  var paths = lines.map(function(points) {
-    return pathElement(d3Line(points));
-  });
+  paths = [];
+  for (var rowIndex=1; rowIndex<=rowCount; rowIndex++) {
+    for (var columnIndex=0; columnIndex<columnCount; columnIndex++) {
+      var d = [];
+      d.push(d3Line(rows[rowIndex - 1][columnIndex]));
+      d.push(d3Line(columns[columnIndex + 1][rowIndex - 1]));
+      d.push(d3Line(rows[rowIndex][columnIndex]));
+      d.push(d3Line(columns[columnIndex][rowIndex - 1]));
+      paths.push(pathElement(d.join(" ")));
+    }
+  }
 
   var svg = [
     xmlHeader,
