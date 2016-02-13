@@ -8,13 +8,10 @@ var executor = function(args, success, failure) {
   var rowCount = params.Rows;
   var columnCount = params.Columns;
 
-  var shapeParams = args[1];
-  var left = shapeParams.left;
-  var top = shapeParams.top;
-  var bottom = shapeParams.bottom;
-  var right = shapeParams.right;
-  var width = shapeParams.right - left;
-  var height = top - shapeParams.bottom;
+  var shape = args[1];
+
+  var width = shape.right - shape.left;
+  var height = shape.top - shape.bottom;
 
   var randomBetween = function(min, max) {
     return Math.random() * (max - min) + min;
@@ -65,12 +62,12 @@ var executor = function(args, success, failure) {
   };
 
   var offsetColumnPosition = function(percent, columnWidth, columnIndex) {
-    var columnOffset = columnWidth * columnIndex + left;
+    var columnOffset = columnWidth * columnIndex + shape.left;
     return percent * columnWidth + columnOffset;
   };
 
   var offsetRowPosition = function(percent, rowHeight, rowIndex) {
-    var rowOffset = rowHeight * rowIndex + bottom;
+    var rowOffset = rowHeight * rowIndex + shape.bottom;
     return percent * rowHeight + rowOffset;
   };
 
@@ -128,7 +125,7 @@ var executor = function(args, success, failure) {
   // SVG helper functions
   var xmlHeader = '<?xml version="1.0" standalone="no"?>';
   var svgOpenTag = '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
-    ' viewBox="' + left + ' ' + bottom + ' ' + width + ' ' + height + '">'
+    ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">'
   var svgCloseTag = '</svg>';
   var pathElement = function(pathData) {
     return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + d + '"/>';
