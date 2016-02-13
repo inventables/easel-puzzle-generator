@@ -20,6 +20,9 @@ var executor = function(args, success, failure) {
     return Math.random() * (max - min) + min;
   };
 
+  // Returns 6 points representing the shape of one edge of a puzzle piece.
+  // Point coordinates are expressed as percentage distances across the width
+  // and height of the piece.
   var edgeDistributions = function() {
     var baselineOffsets = {
       xMin: 51,
@@ -71,6 +74,8 @@ var executor = function(args, success, failure) {
     return percent * rowHeight + rowOffset;
   };
 
+  // Builds an m + 1 x n matrix of edge shapes. The first and last rows
+  // are straight edges.
   var buildDistributions = function(m, n) {
     var lineGroups = [];
     var lines = [];
