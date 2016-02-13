@@ -121,17 +121,6 @@ var executor = function(args, success, failure) {
     }
   };
 
-  // SVG helper functions
-  var svg = {
-    header: '<?xml version="1.0" standalone="no"?>',
-    openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
-               ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">',
-    closeTag: '</svg>',
-    pathTag: function(pathData) {
-      return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
-    }
-  };
-
   var buildPieces = function(rowCount, columnCount, rows, columns) {
     var pieces = [];
     for (var rowIndex=1; rowIndex<=rowCount; rowIndex++) {
@@ -172,6 +161,17 @@ var executor = function(args, success, failure) {
       }).join(" ");
       return svg.pathTag(pieceData);
     });
+  };
+
+  // SVG helpers
+  var svg = {
+    header: '<?xml version="1.0" standalone="no"?>',
+    openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
+               ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">',
+    closeTag: '</svg>',
+    pathTag: function(pathData) {
+      return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
+    }
   };
 
   success([
