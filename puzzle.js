@@ -151,7 +151,6 @@ var executor = function(args, success, failure) {
   var buildPiecePaths = function() {
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
-    var distributions;
 
     var rows = buildDistributions(rowCount, columnCount);
     offsetPoints(rows, function(point, j, i) {
