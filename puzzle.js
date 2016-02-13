@@ -159,9 +159,21 @@ var executor = function(args, success, failure) {
       var pieceData = piece.map(function(edge) {
         return d3Line(edge);
       }).join(" ");
-      return svg.pathTag(pieceData);
+      return svg.strokePath(pieceData, "#000");
     });
   };
+
+  var buildShapePaths = function() {
+    var d3Line = d3_shape.line();
+
+    var shapeData = shape.pointArrays.map(function(pointArray) {
+      return d3Line(pointArray.map(function(point) {
+        // Invert shape vertically
+        return [point[0], shape.top - point[1] + shape.bottom];
+      }));
+    }).join(" ");
+    return svg.fillPath(shapeData, "#999");
+  }
 
   // SVG helpers
   var svg = {
@@ -169,14 +181,18 @@ var executor = function(args, success, failure) {
     openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
                ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">',
     closeTag: '</svg>',
-    pathTag: function(pathData) {
-      return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
+    fillPath: function(pathData, color) {
+      return '<path stroke-width="1" stroke="' + color + '" fill="' + color + '" vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
+    },
+    strokePath: function(pathData, color) {
+      return '<path stroke-width="1" stroke="' + color + '" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
     }
   };
 
   success([
     svg.header,
     svg.openTag,
+    buildShapePaths(),
     buildPiecePaths().join(""),
     svg.closeTag
   ].join(""));
