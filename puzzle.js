@@ -9,18 +9,17 @@ var executor = function(args, success, failure) {
   var columnCount = params.Columns;
 
   var shape = args[1];
-
   var width = shape.right - shape.left;
   var height = shape.top - shape.bottom;
-
-  var randomBetween = function(min, max) {
-    return Math.random() * (max - min) + min;
-  };
 
   // Returns 6 points representing the shape of one edge of a puzzle piece.
   // Point coordinates are expressed as percentage distances across the width
   // and height of the piece.
   var edgeDistributions = function() {
+    var randomBetween = function(min, max) {
+      return Math.random() * (max - min) + min;
+    };
+
     var baselineOffsets = {
       xMin: 51,
       xMax: 62,
@@ -61,16 +60,6 @@ var executor = function(args, success, failure) {
     });
   };
 
-  var offsetColumnPosition = function(percent, columnWidth, columnIndex) {
-    var columnOffset = columnWidth * columnIndex + shape.left;
-    return percent * columnWidth + columnOffset;
-  };
-
-  var offsetRowPosition = function(percent, rowHeight, rowIndex) {
-    var rowOffset = rowHeight * rowIndex + shape.bottom;
-    return percent * rowHeight + rowOffset;
-  };
-
   // Builds an m + 1 x n matrix of edge shapes. The first and last rows
   // are straight edges.
   var buildDistributions = function(m, n) {
@@ -105,6 +94,16 @@ var executor = function(args, success, failure) {
   };
 
   var offsetPoint = function(point, columnIndex, rowIndex, columnWidth, rowHeight) {
+    var offsetColumnPosition = function(percent, columnWidth, columnIndex) {
+      var columnOffset = columnWidth * columnIndex + shape.left;
+      return percent * columnWidth + columnOffset;
+    };
+
+    var offsetRowPosition = function(percent, rowHeight, rowIndex) {
+      var rowOffset = rowHeight * rowIndex + shape.bottom;
+      return percent * rowHeight + rowOffset;
+    };
+
     var x = offsetColumnPosition(point[0], columnWidth, columnIndex);
     var y = offsetRowPosition(point[1], rowHeight, rowIndex);
 
@@ -123,49 +122,64 @@ var executor = function(args, success, failure) {
   };
 
   // SVG helper functions
-  var xmlHeader = '<?xml version="1.0" standalone="no"?>';
-  var svgOpenTag = '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
-    ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">'
-  var svgCloseTag = '</svg>';
-  var pathElement = function(pathData) {
-    return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + d + '"/>';
+  var svg = {
+    header: '<?xml version="1.0" standalone="no"?>',
+    openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
+               ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">',
+    closeTag: '</svg>',
+    pathTag: function(pathData) {
+      return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
+    }
   };
 
-  var d3Line = d3_shape.line().curve(d3_shape.curveBasis);
+  var buildPieces = function(rowCount, columnCount, rows, columns) {
+    var pieces = [];
+    for (var rowIndex=1; rowIndex<=rowCount; rowIndex++) {
+      for (var columnIndex=0; columnIndex<columnCount; columnIndex++) {
+        var edges = [];
+        edges.push(rows[rowIndex - 1][columnIndex]);
+        edges.push(columns[columnIndex + 1][rowIndex - 1]);
+        edges.push(rows[rowIndex][columnIndex]);
+        edges.push(columns[columnIndex][rowIndex - 1]);
 
-  var rowHeight = height / rowCount;
-  var columnWidth = width / columnCount;
-  var distributions;
-
-  var rows = buildDistributions(rowCount, columnCount);
-  offsetPoints(rows, function(point, j, i) {
-    return offsetPoint(point, j, i, columnWidth, rowHeight);
-  });
-
-  var columns = buildDistributions(columnCount, rowCount);
-  offsetPoints(columns, function(point, j, i) {
-    return offsetPoint(transposePoint(point), i, j, columnWidth, rowHeight);
-  });
-
-  paths = [];
-  for (var rowIndex=1; rowIndex<=rowCount; rowIndex++) {
-    for (var columnIndex=0; columnIndex<columnCount; columnIndex++) {
-      var d = [];
-      d.push(d3Line(rows[rowIndex - 1][columnIndex]));
-      d.push(d3Line(columns[columnIndex + 1][rowIndex - 1]));
-      d.push(d3Line(rows[rowIndex][columnIndex]));
-      d.push(d3Line(columns[columnIndex][rowIndex - 1]));
-      paths.push(pathElement(d.join(" ")));
+        pieces.push(edges);
+      }
     }
-  }
+    return pieces;
+  };
 
-  var svg = [
-    xmlHeader,
-    svgOpenTag,
-    paths.join(""),
-    svgCloseTag
-  ].join("");
+  var buildPiecePaths = function() {
+    var rowHeight = height / rowCount;
+    var columnWidth = width / columnCount;
+    var distributions;
 
-  success(svg);
+    var rows = buildDistributions(rowCount, columnCount);
+    offsetPoints(rows, function(point, j, i) {
+      return offsetPoint(point, j, i, columnWidth, rowHeight);
+    });
+
+    var columns = buildDistributions(columnCount, rowCount);
+    offsetPoints(columns, function(point, j, i) {
+      return offsetPoint(transposePoint(point), i, j, columnWidth, rowHeight);
+    });
+
+    var pieces = buildPieces(rowCount, columnCount, rows, columns);
+
+    var d3Line = d3_shape.line().curve(d3_shape.curveBasis);
+
+    return pieces.map(function(piece) {
+      var pieceData = piece.map(function(edge) {
+        return d3Line(edge);
+      }).join(" ");
+      return svg.pathTag(pieceData);
+    });
+  };
+
+  success([
+    svg.header,
+    svg.openTag,
+    buildPiecePaths().join(""),
+    svg.closeTag
+  ].join(""));
 };
 
