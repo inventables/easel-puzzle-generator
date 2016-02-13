@@ -4,11 +4,17 @@ var properties = [
 ];
 
 var executor = function(args, success, failure) {
-  var width = 450, height = 450;
-
   var params = args[0];
   var rowCount = params.Rows;
   var columnCount = params.Columns;
+
+  var shapeParams = args[1];
+  var left = shapeParams.left;
+  var top = shapeParams.top;
+  var bottom = shapeParams.bottom;
+  var right = shapeParams.right;
+  var width = shapeParams.right - left;
+  var height = top - shapeParams.bottom;
 
   var randomBetween = function(min, max) {
     return Math.random() * (max - min) + min;
@@ -56,12 +62,12 @@ var executor = function(args, success, failure) {
   };
 
   var offsetColumnPosition = function(percent, columnWidth, columnIndex) {
-    var columnOffset = columnWidth * columnIndex;
+    var columnOffset = columnWidth * columnIndex + left;
     return percent * columnWidth + columnOffset;
   };
 
   var offsetRowPosition = function(percent, rowHeight, rowIndex) {
-    var rowOffset = rowHeight * rowIndex;
+    var rowOffset = rowHeight * rowIndex + bottom;
     return percent * rowHeight + rowOffset;
   };
 
@@ -72,7 +78,7 @@ var executor = function(args, success, failure) {
 
     var mapPoint = function(point, columnIndex, rowIndex) {
       var x = offsetColumnPosition(point[0], columnWidth, columnIndex);
-      var y = height - offsetRowPosition(point[1], rowHeight, rowIndex);
+      var y = offsetRowPosition(point[1], rowHeight, rowIndex);
 
       return [x, y];
     };
@@ -119,7 +125,7 @@ var executor = function(args, success, failure) {
 
     var mapPoint = function(point, columnIndex, rowIndex) {
       var x = offsetColumnPosition(point[1], columnWidth, columnIndex);
-      var y = height - offsetRowPosition(point[0], rowHeight, rowIndex);
+      var y = offsetRowPosition(point[0], rowHeight, rowIndex);
 
       return [x, y];
     };
@@ -163,7 +169,8 @@ var executor = function(args, success, failure) {
 
   // SVG helper functions
   var xmlHeader = '<?xml version="1.0" standalone="no"?>';
-  var svgOpenTag = '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="500" height="500">';
+  var svgOpenTag = '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
+    ' viewBox="' + left + ' ' + bottom + ' ' + width + ' ' + height + '">'
   var svgCloseTag = '</svg>';
   var pathElement = function(pathData) {
     return '<path stroke-width="1" stroke="#999" vector-effect="non-scaling-stroke" fill="none" d="' + d + '"/>';
