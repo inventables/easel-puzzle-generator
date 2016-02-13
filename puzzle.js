@@ -71,100 +71,53 @@ var executor = function(args, success, failure) {
     return percent * rowHeight + rowOffset;
   };
 
-  var buildHorizontalLines = function() {
-    var rows = [];
-    var rowHeight = height / rowCount;
-    var columnWidth = width / columnCount;
-
-    var mapPoint = function(point, columnIndex, rowIndex) {
-      var x = offsetColumnPosition(point[0], columnWidth, columnIndex);
-      var y = offsetRowPosition(point[1], rowHeight, rowIndex);
-
-      return [x, y];
-    };
-
+  var buildDistributions = function(m, n) {
+    var lineGroups = [];
     var lines = [];
-    for (var columnIndex=0; columnIndex < columnCount; columnIndex++) {
-      var points = [[0, 0], [1,0]];
-      points = points.map(function(point) {
-        return mapPoint(point, columnIndex, 0);
-      });
-      lines.push(points);
-    }
-    rows.push(lines)
+    var points, i, j;
 
-    for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
-      lines = []
-      for (columnIndex=0; columnIndex < columnCount; columnIndex++) {
-        points = edgeDistributions();
-        points = points.map(function(point) {
-          return mapPoint(point, columnIndex, rowIndex);
-        });
-        lines.push(points);
+    for (j = 0; j < n; j++) {
+      lines.push([[0, 0], [1,0]]);
+    }
+    lineGroups.push(lines);
+
+    for (i = 1; i < m; i++) {
+      lines = [];
+      for (j = 0; j < n; j++) {
+        lines.push(edgeDistributions());
       }
-      rows.push(lines);
+      lineGroups.push(lines);
     }
 
     lines = [];
-    for (columnIndex=0; columnIndex < columnCount; columnIndex++) {
-      points = [[0, 0], [1,0]];
-      points = points.map(function(point) {
-        return mapPoint(point, columnIndex, rowCount);
-      });
-      lines.push(points);
+    for (j = 0; j < n; j++) {
+      lines.push([[0, 0], [1,0]]);
     }
-    rows.push(lines);
+    lineGroups.push(lines);
 
-    return rows;
+    return lineGroups;
   };
 
-  var buildVerticalLines = function() {
-    var columns = [];
-    var rowHeight = height / rowCount;
-    var columnWidth = width / columnCount;
+  var transposePoint = function(point) {
+    return [point[1], point[0]];
+  };
 
-    var mapPoint = function(point, columnIndex, rowIndex) {
-      var x = offsetColumnPosition(point[1], columnWidth, columnIndex);
-      var y = offsetRowPosition(point[0], rowHeight, rowIndex);
+  var offsetPoint = function(point, columnIndex, rowIndex, columnWidth, rowHeight) {
+    var x = offsetColumnPosition(point[0], columnWidth, columnIndex);
+    var y = offsetRowPosition(point[1], rowHeight, rowIndex);
 
-      return [x, y];
-    };
+    return [x, y];
+  };
 
-    var lines = [];
-    for (var rowIndex=0; rowIndex < rowCount; rowIndex++) {
-      var points = [[0, 0], [1,0]];
-      points = points.map(function(point) {
-        return mapPoint(point, 0, rowIndex);
-      });
-      lines.push(points);
-    }
-    columns.push(lines);
-
-    for (var columnIndex=1; columnIndex < columnCount; columnIndex++) {
-      lines = [];
-      for (rowIndex=0; rowIndex < rowCount; rowIndex++) {
-        points = edgeDistributions();
-
-        points = points.map(function(point) {
-          return mapPoint(point, columnIndex, rowIndex);
+  var offsetPoints = function(lineGroups, offsetter) {
+    for (var i=0; i<lineGroups.length; i++) {
+      var lines = lineGroups[i];
+      for (var j=0; j<lines.length; j++) {
+        lines[j] = lines[j].map(function(point) {
+          return offsetter(point, j, i);
         });
-
-        lines.push(points);
       }
-      columns.push(lines);
     }
-
-    lines = [];
-    for (rowIndex=0; rowIndex < rowCount; rowIndex++) {
-      var points = [[0, 0], [1,0]];
-      points = points.map(function(point) {
-        return mapPoint(point, columnCount, rowIndex);
-      });
-      lines.push(points);
-    }
-    columns.push(lines);
-
-    return columns;
   };
 
   // SVG helper functions
@@ -178,8 +131,19 @@ var executor = function(args, success, failure) {
 
   var d3Line = d3_shape.line().curve(d3_shape.curveBasis);
 
-  var rows = buildHorizontalLines()
-  var columns = buildVerticalLines();
+  var rowHeight = height / rowCount;
+  var columnWidth = width / columnCount;
+  var distributions;
+
+  var rows = buildDistributions(rowCount, columnCount);
+  offsetPoints(rows, function(point, j, i) {
+    return offsetPoint(point, j, i, columnWidth, rowHeight);
+  });
+
+  var columns = buildDistributions(columnCount, rowCount);
+  offsetPoints(columns, function(point, j, i) {
+    return offsetPoint(transposePoint(point), i, j, columnWidth, rowHeight);
+  });
 
   paths = [];
   for (var rowIndex=1; rowIndex<=rowCount; rowIndex++) {
