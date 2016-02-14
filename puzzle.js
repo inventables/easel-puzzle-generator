@@ -121,25 +121,10 @@ var executor = function(args, success, failure) {
     }
   };
 
-  var buildPieces = function(rowCount, columnCount, rows, columns) {
-    var pieces = [];
-    for (var rowIndex=1; rowIndex<=rowCount; rowIndex++) {
-      for (var columnIndex=0; columnIndex<columnCount; columnIndex++) {
-        var edges = [];
-        edges.push(rows[rowIndex - 1][columnIndex]);
-        edges.push(columns[columnIndex + 1][rowIndex - 1]);
-        edges.push(rows[rowIndex][columnIndex]);
-        edges.push(columns[columnIndex][rowIndex - 1]);
-
-        pieces.push(edges);
-      }
-    }
-    return pieces;
-  };
-
-  var buildPiecePaths = function() {
+  var buildPieces = function() {
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
+    var pieces = [];
 
     var rows = buildDistributions(rowCount, columnCount);
     offsetPoints(rows, function(point, j, i) {
@@ -151,8 +136,23 @@ var executor = function(args, success, failure) {
       return offsetPoint(transposePoint(point), i, j, columnWidth, rowHeight);
     });
 
-    var pieces = buildPieces(rowCount, columnCount, rows, columns);
+    for (var rowIndex = 1; rowIndex <= rowCount; rowIndex++) {
+      for (var columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+        var edges = [];
+        edges.push(rows[rowIndex - 1][columnIndex]);
+        edges.push(columns[columnIndex + 1][rowIndex - 1]);
+        edges.push(rows[rowIndex][columnIndex]);
+        edges.push(columns[columnIndex][rowIndex - 1]);
 
+        pieces.push(edges);
+      }
+    }
+
+    return pieces;
+  };
+
+  var buildPiecePaths = function() {
+    var pieces = buildPieces();
     var d3Line = d3_shape.line().curve(d3_shape.curveBasis);
 
     return pieces.map(function(piece) {
