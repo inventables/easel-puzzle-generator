@@ -141,8 +141,8 @@ var executor = function(args, success, failure) {
         var edges = [];
         edges.push(rows[rowIndex - 1][columnIndex]);
         edges.push(columns[columnIndex + 1][rowIndex - 1]);
-        edges.push(rows[rowIndex][columnIndex]);
-        edges.push(columns[columnIndex][rowIndex - 1]);
+        edges.push(rows[rowIndex][columnIndex].slice().reverse());
+        edges.push(columns[columnIndex][rowIndex - 1].slice().reverse());
 
         pieces.push(edges);
       }
@@ -151,8 +151,7 @@ var executor = function(args, success, failure) {
     return pieces;
   };
 
-  var buildPiecePaths = function() {
-    var pieces = buildPieces();
+  var buildPiecePaths = function(pieces) {
     var d3Line = d3_shape.line().curve(d3_shape.curveBasis);
 
     return pieces.map(function(piece) {
@@ -172,8 +171,54 @@ var executor = function(args, success, failure) {
         return [point[0], shape.top - point[1] + shape.bottom];
       }));
     }).join(" ");
-    return svg.fillPath(shapeData, "#999");
-  }
+    return svg.strokePath(shapeData, "#999");
+  };
+
+  var clippedPieces = function(pieces) {
+    var scale = 32768; // Clipper can only deal with ints
+
+    var scaleUpLine = function(line) {
+      return line.map(function(point) {
+        return {X: point[0] * scale, Y: point[1] * scale};
+      });
+    };
+
+    var scaleDownLine = function(line) {
+      return line.map(function(point) {
+        return [point.X / scale, point.Y / scale];
+      });
+    };
+
+    var intersect = function(subjectLines, clipLines) {
+      var scaledUpSubjectLines = subjectLines.map(scaleUpLine);
+      var scaledUpClipLines = clipLines.map(scaleUpLine);
+
+      var solutions = [];
+
+      for (var i = 0; i < scaledUpSubjectLines.length; i++) {
+        var cpr = new ClipperLib.Clipper();
+        var scaledUpSubjectLine = scaledUpSubjectLines[i];
+        var solution = new ClipperLib.Paths();
+
+        cpr.AddPath(scaledUpSubjectLine, ClipperLib.PolyType.ptSubject, true);
+        cpr.AddPaths(scaledUpClipLines, ClipperLib.PolyType.ptClip, true);
+
+        cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
+
+        solutions = solutions.concat(solution.map(scaleDownLine));
+      }
+      return solutions;
+    };
+
+    var polygonPieces = pieces.map(function(edges) {
+      var points = [];
+      for (var i = 0; i < edges.length; i++) {
+        points = points.concat(edges[i]);
+      }
+      return points;
+    });
+    return intersect(polygonPieces, shape.pointArrays);
+  };
 
   // SVG helpers
   var svg = {
@@ -189,11 +234,16 @@ var executor = function(args, success, failure) {
     }
   };
 
+  var pieces = buildPieces();
+  var piecePaths = buildPiecePaths(pieces).join("");
+  var clippedPieceLines = clippedPieces(pieces);
+
   success([
     svg.header,
     svg.openTag,
-    buildShapePaths(),
-    buildPiecePaths().join(""),
+    buildPaths(shape.pointArrays),
+    //buildPaths(clippedPieceLines),
+    piecePaths,
     svg.closeTag
   ].join(""));
 };
