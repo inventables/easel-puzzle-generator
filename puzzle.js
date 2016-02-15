@@ -210,11 +210,17 @@ var executor = function(args, success, failure) {
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
-        if (solution.length > 0) {
-          console.log(solution);
-        }
+        var mappedSolution = solution.map(function(line) {
+          line = scaleDownLine(line);
+          var firstPoint = line[0];
+          var lastPoint = line[1];
+          if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+            line.push(firstPoint);
+          }
+          return line;
+        });
 
-        solutions = solutions.concat(solution.map(scaleDownLine));
+        solutions = solutions.concat(mappedSolution);
       }
       return solutions;
     };
