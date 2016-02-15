@@ -151,14 +151,17 @@ var executor = function(args, success, failure) {
     return pieces;
   };
 
-  var buildPiecePaths = function(pieces) {
-    var d3Line = d3_shape.line().curve(d3_shape.curveBasis);
+  var d3CurvedLine = d3_shape.line().curve(d3_shape.curveBasis);
 
+  var piecePathData = function(piece) {
+    return piece.map(function(edge) {
+      return d3CurvedLine(edge);
+    }).join(" ");
+  };
+
+  var buildPiecePaths = function(pieces) {
     return pieces.map(function(piece) {
-      var pieceData = piece.map(function(edge) {
-        return d3Line(edge);
-      }).join(" ");
-      return svg.strokePath(pieceData, "#000");
+      return svg.strokePath(piecePathData(piece), "#000");
     });
   };
 
@@ -179,7 +182,10 @@ var executor = function(args, success, failure) {
 
     var scaleUpLine = function(line) {
       return line.map(function(point) {
-        return {X: point[0] * scale, Y: point[1] * scale};
+        if (point.x)
+          return {X: point.x * scale, Y: point.y * scale};
+        else
+          return {X: point[0] * scale, Y: point[1] * scale};
       });
     };
 
@@ -205,19 +211,30 @@ var executor = function(args, success, failure) {
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
+        if (solution.length > 0) {
+          console.log(solution);
+        }
+
         solutions = solutions.concat(solution.map(scaleDownLine));
       }
       return solutions;
     };
 
-    var polygonPieces = pieces.map(function(edges) {
+    var polylineGenerator = EASEL.pathPolylineGenerator(0.001, EASEL.matrix());
+    var piecePathDataStrings = pieces.map(piecePathData);
+
+    var pieceLines = piecePathDataStrings.map(function(dataString) {
+      var controlPoints = EASEL.pathToControlPoints(EASEL.pathStringParser.parse(dataString));
+      var polylines = polylineGenerator.toPolylines(controlPoints);
+
       var points = [];
-      for (var i = 0; i < edges.length; i++) {
-        points = points.concat(edges[i]);
+      for (var i = 0; i < polylines.length; i++) {
+        points = points.concat(polylines[i]);
       }
       return points;
     });
-    return intersect(polygonPieces, shape.pointArrays);
+
+    return intersect(pieceLines, shape.pointArrays);
   };
 
   // SVG helpers
@@ -241,9 +258,9 @@ var executor = function(args, success, failure) {
   success([
     svg.header,
     svg.openTag,
-    buildPaths(shape.pointArrays),
-    //buildPaths(clippedPieceLines),
-    piecePaths,
+    //buildPaths(shape.pointArrays),
+    buildPaths(clippedPieceLines),
+    //piecePaths,
     svg.closeTag
   ].join(""));
 };
