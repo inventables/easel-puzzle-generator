@@ -168,13 +168,12 @@ var executor = function(args, success, failure) {
   var buildPaths = function(pointArrays) {
     var d3Line = d3_shape.line();
 
-    var shapeData = pointArrays.map(function(pointArray) {
-      return d3Line(pointArray.map(function(point) {
+    return pointArrays.map(function(pointArray) {
+      return svg.strokePath(d3Line(pointArray.map(function(point) {
         // Invert shape vertically
         return [point[0], shape.top - point[1] + shape.bottom];
-      }));
-    }).join(" ");
-    return svg.strokePath(shapeData, "#999");
+      })), "#999");
+    })
   };
 
   var clippedPieces = function(pieces) {
