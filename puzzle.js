@@ -1,12 +1,14 @@
 var properties = [
   {type: 'range', id: "Rows", value: 8, min: 1, max: 10, step: 1},
-  {type: 'range', id: "Columns", value: 10, min: 1, max: 10, step: 1}
+  {type: 'range', id: "Columns", value: 10, min: 1, max: 10, step: 1},
+  {id: "Shapes", type: "list", value: "fill", options: [["fill", "Fill"], ["stroke", "Outline"]]},
 ];
 
 var executor = function(args, success, failure) {
   var params = args[0];
   var rowCount = params.Rows;
   var columnCount = params.Columns;
+  var shapeType = params.Shapes;
 
   var shape = args[1];
   var width = shape.right - shape.left;
@@ -161,7 +163,7 @@ var executor = function(args, success, failure) {
 
   var buildPiecePaths = function(pieces) {
     return pieces.map(function(piece) {
-      return svg.strokePath(piecePathData(piece), "#000");
+      return svg.path(shapeType, piecePathData(piece), "#000");
     });
   };
 
@@ -169,7 +171,7 @@ var executor = function(args, success, failure) {
     var d3Line = d3_shape.line();
 
     return pointArrays.map(function(pointArray) {
-      return svg.strokePath(d3Line(pointArray.map(function(point) {
+      return svg.path(shapeType, d3Line(pointArray.map(function(point) {
         // Invert shape vertically
         return [point[0], shape.top - point[1] + shape.bottom];
       })), "#999");
@@ -248,11 +250,12 @@ var executor = function(args, success, failure) {
     openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
                ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">',
     closeTag: '</svg>',
-    fillPath: function(pathData, color) {
-      return '<path stroke-width="1" stroke="' + color + '" fill="' + color + '" vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
-    },
-    strokePath: function(pathData, color) {
-      return '<path stroke-width="1" stroke="' + color + '" vector-effect="non-scaling-stroke" fill="none" d="' + pathData + '"/>';
+    path: function(type, pathData, color) {
+      var strokeFill = [color, 'none'];
+      if (type === 'fill') {
+        strokeFill.reverse();
+      }
+      return '<path stroke-width="1" stroke="' + strokeFill[0] + '" fill="' + strokeFill[1] + '" vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
     }
   };
 
