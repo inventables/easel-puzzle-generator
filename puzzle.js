@@ -171,10 +171,7 @@ var executor = function(args, success, failure) {
     var d3Line = d3_shape.line();
 
     return pointArrays.map(function(pointArray) {
-      return svg.path(shapeType, d3Line(pointArray.map(function(point) {
-        // Invert shape vertically
-        return [point[0], shape.top - point[1] + shape.bottom];
-      })), "#999");
+      return svg.path(shapeType, d3Line(pointArray), "#999");
     })
   };
 
@@ -259,6 +256,8 @@ var executor = function(args, success, failure) {
     openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
                ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">',
     closeTag: '</svg>',
+    openGTag: '<g transform="translate(0,' + (shape.top + shape.bottom) + ') scale(1,-1)">',
+    closeGTag: '</g>',
     path: function(type, pathData, color) {
       var strokeFill = [color, 'none'];
       if (type === 'fill') {
@@ -275,9 +274,11 @@ var executor = function(args, success, failure) {
   success([
     svg.header,
     svg.openTag,
+    svg.openGTag,
     //buildPaths(shape.pointArrays),
     buildPaths(clippedPieceLines),
     piecePaths,
+    svg.closeGTag,
     svg.closeTag
   ].join(""));
 };
