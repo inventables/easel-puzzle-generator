@@ -256,7 +256,7 @@ var executor = function(args, success, failure) {
     }
   };
 
-  var pieces = buildPieces();
+  //var pieces = buildPieces();
   var piecePaths = buildPiecePaths(pieces).join("");
   var clippedPieceLines = clippedPieces(pieces);
 
