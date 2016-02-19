@@ -196,6 +196,23 @@ var executor = function(args, success, failure) {
       });
     };
 
+    var closePoints = function(points) {
+      var firstPoint, lastPoint;
+
+      if (points.length === 0) {
+        return points;
+      }
+
+      firstPoint = points[0];
+      lastPoint = points[points.length - 1];
+
+      if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+        points.push(firstPoint);
+      }
+
+      return points;
+    }
+
     var intersect = function(pieceLines, shapeLines) {
       var scaledUpPieceLines = pieceLines.map(scaleUpLine);
       var scaledUpShapeLines = shapeLines.map(scaleUpLine);
@@ -212,17 +229,9 @@ var executor = function(args, success, failure) {
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
-        var mappedSolution = solution.map(function(line) {
-          line = scaleDownLine(line);
-          var firstPoint = line[0];
-          var lastPoint = line[1];
-          if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
-            line.push(firstPoint);
-          }
-          return line;
-        });
+        var closedSolution = solution.map(scaleDownLine).map(closePoints); // Design + piece
 
-        solutions = solutions.concat(mappedSolution);
+        solutions = solutions.concat(closedSolution);
       }
       return solutions;
     };
