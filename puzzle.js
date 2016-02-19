@@ -196,19 +196,19 @@ var executor = function(args, success, failure) {
       });
     };
 
-    var intersect = function(subjectLines, clipLines) {
-      var scaledUpSubjectLines = subjectLines.map(scaleUpLine);
-      var scaledUpClipLines = clipLines.map(scaleUpLine);
+    var intersect = function(pieceLines, shapeLines) {
+      var scaledUpPieceLines = pieceLines.map(scaleUpLine);
+      var scaledUpShapeLines = shapeLines.map(scaleUpLine);
 
       var solutions = [];
 
-      for (var i = 0; i < scaledUpSubjectLines.length; i++) {
+      for (var i = 0; i < scaledUpPieceLines.length; i++) {
         var cpr = new ClipperLib.Clipper();
-        var scaledUpSubjectLine = scaledUpSubjectLines[i];
+        var scaledUpPieceLine = scaledUpPieceLines[i];
         var solution = new ClipperLib.Paths();
 
-        cpr.AddPath(scaledUpSubjectLine, ClipperLib.PolyType.ptSubject, true);
-        cpr.AddPaths(scaledUpClipLines, ClipperLib.PolyType.ptClip, true);
+        cpr.AddPath(scaledUpPieceLine, ClipperLib.PolyType.ptSubject, true);
+        cpr.AddPaths(scaledUpShapeLines, ClipperLib.PolyType.ptClip, true);
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
