@@ -163,7 +163,7 @@ var executor = function(args, success, failure) {
 
   var buildPiecePaths = function(pieces) {
     return pieces.map(function(piece) {
-      return svg.path(shapeType, piecePathData(piece), "#000");
+      return svg.path("stroke", piecePathData(piece), "#000");
     });
   };
 
@@ -277,7 +277,7 @@ var executor = function(args, success, failure) {
     svg.openTag,
     //buildPaths(shape.pointArrays),
     buildPaths(clippedPieceLines),
-    //piecePaths,
+    piecePaths,
     svg.closeTag
   ].join(""));
 };
