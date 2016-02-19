@@ -1,3 +1,7 @@
+var alert = function() {
+
+}
+
 var properties = [
   {type: 'range', id: "Rows", value: 8, min: 1, max: 10, step: 1},
   {type: 'range', id: "Columns", value: 10, min: 1, max: 10, step: 1},
@@ -8,7 +12,7 @@ var executor = function(args, success, failure) {
   var params = args[0];
   var rowCount = params.Rows;
   var columnCount = params.Columns;
-  var shapeType = params.Shapes;
+  var usingFills = params.Shapes === 'fill';
 
   var shape = args[1];
   var width = shape.right - shape.left;
@@ -163,7 +167,7 @@ var executor = function(args, success, failure) {
 
   var buildPiecePaths = function(pieces) {
     return pieces.map(function(piece) {
-      return svg.path("stroke", piecePathData(piece), "#000");
+      return svg.path(false, piecePathData(piece), "#000");
     });
   };
 
@@ -171,7 +175,7 @@ var executor = function(args, success, failure) {
     var d3Line = d3_shape.line();
 
     return pointArrays.map(function(pointArray) {
-      return svg.path(shapeType, d3Line(pointArray), "#999");
+      return svg.path(usingFills, d3Line(pointArray), "#999");
     })
   };
 
@@ -221,14 +225,18 @@ var executor = function(args, success, failure) {
         var scaledUpPieceLine = scaledUpPieceLines[i];
         var solution = new ClipperLib.Paths();
 
-        cpr.AddPath(scaledUpPieceLine, ClipperLib.PolyType.ptSubject, true);
-        cpr.AddPaths(scaledUpShapeLines, ClipperLib.PolyType.ptClip, true);
+        cpr.AddPath(scaledUpPieceLine, ClipperLib.PolyType.ptClip, true);
+        cpr.AddPaths(scaledUpShapeLines, ClipperLib.PolyType.ptSubject, usingFills);
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
-        var closedSolution = solution.map(scaleDownLine).map(closePoints); // Design + piece
+        solution = solution.map(scaleDownLine);
 
-        solutions = solutions.concat(closedSolution);
+        if (usingFills) {
+          solution = solution.map(closePoints);
+        }
+
+        solutions = solutions.concat(solution);
       }
       return solutions;
     };
@@ -258,9 +266,9 @@ var executor = function(args, success, failure) {
     closeTag: '</svg>',
     openGTag: '<g transform="translate(0,' + (shape.top + shape.bottom) + ') scale(1,-1)">',
     closeGTag: '</g>',
-    path: function(type, pathData, color) {
+    path: function(isFill, pathData, color) {
       var strokeFill = [color, 'none'];
-      if (type === 'fill') {
+      if (isFill) {
         strokeFill.reverse();
       }
       return '<path stroke-width="1" stroke="' + strokeFill[0] + '" fill="' + strokeFill[1] + '" vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
