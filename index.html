@@ -11,7 +11,7 @@
 
   rect,
   circle,
-  .line {
+  path {
     fill: none;
     stroke: steelblue;
     stroke-width: 1.5px;
@@ -196,7 +196,7 @@
     openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + '" height="' + height + '">',
     closeTag: '</svg>',
     path: function(pathData) {
-      return '<path stroke-width="1" stroke="#000" fill="none" vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
+      return '<path vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
     }
   };
 
