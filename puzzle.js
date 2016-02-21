@@ -223,6 +223,13 @@ var executor = function(args, success, failure) {
       for (var i = 0; i < scaledUpPieceLines.length; i++) {
         var cpr = new ClipperLib.Clipper();
         var scaledUpPieceLine = scaledUpPieceLines[i];
+
+        //if (! usingFills) {
+        //  // The clipper loses the last segment, so add a fake point for it to lose instead
+        //  var lastPoint = scaledUpPieceLine[scaledUpPieceLine.length - 1]
+        //  scaledUpPieceLine.push(lastPoint)
+        //}
+
         var solution = new ClipperLib.Paths();
 
         cpr.AddPath(scaledUpPieceLine, ClipperLib.PolyType.ptClip, true);
