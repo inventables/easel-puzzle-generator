@@ -1,4 +1,4 @@
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
 <script src="https://d3js.org/d3-path.v0.1.min.js"></script>
 <script src="https://d3js.org/d3-shape.v0.5.min.js"></script>
 
@@ -31,18 +31,21 @@
     <label for="columnCount">Columns:</label>
     <input type="number" id="columnCount" min="1" max="10" value="10"/>
   </form>
+  <div id="container">
+  </div>
 </body>
 
 <script>
   var width = 500, height = 500;
 
-  var randomBetween = function(min, max) {
-    return Math.random() * (max - min) + min;
-  };
-  var rowCount = 10;
-  var columnCount = 10;
-
+  // Returns 6 points representing the shape of one edge of a puzzle piece.
+  // Point coordinates are expressed as percentage distances across the width
+  // and height of the piece.
   var edgeDistributions = function() {
+    var randomBetween = function(min, max) {
+      return Math.random() * (max - min) + min;
+    };
+
     var baselineOffsets = {
       xMin: 51,
       xMax: 62,
@@ -83,95 +86,140 @@
     });
   };
 
-  var changeRowCount = function() {
-    rowCount = this.value;
-    rebuildLines()
-  };
-
-  var changeColumnCount = function() {
-    columnCount = this.value;
-    rebuildLines()
-  };
-
-  var redraw = function() {
-    svg.selectAll("path").attr("d", line);
-  }
-
-  var rebuildLines = function() {
-    var lines = buildHorizontalLines();
-    lines = lines.concat(buildVerticalLines());
-    var lineData = svg.selectAll("path").data(lines);
-    lineData.enter().append("path")
-          .attr("class", "line")
-          .call(redraw);
-    lineData.exit().remove()
-  };
-
-  var buildHorizontalLines = function() {
+  // Builds an m + 1 x n matrix of edge shapes. The first and last rows
+  // are straight edges.
+  var buildDistributions = function(m, n) {
+    var lineGroups = [];
     var lines = [];
+    var points, i, j;
+
+    for (j = 0; j < n; j++) {
+      lines.push([[0, 0], [1,0]]);
+    }
+    lineGroups.push(lines);
+
+    for (i = 1; i < m; i++) {
+      lines = [];
+      for (j = 0; j < n; j++) {
+        lines.push(edgeDistributions());
+      }
+      lineGroups.push(lines);
+    }
+
+    lines = [];
+    for (j = 0; j < n; j++) {
+      lines.push([[0, 0], [1,0]]);
+    }
+    lineGroups.push(lines);
+
+    return lineGroups;
+  };
+
+  var transposePoint = function(point) {
+    return [point[1], point[0]];
+  };
+
+  var offsetPoint = function(point, columnIndex, rowIndex, columnWidth, rowHeight) {
+    var offsetColumnPosition = function(percent, columnWidth, columnIndex) {
+      var columnOffset = columnWidth * columnIndex;
+      return percent * columnWidth + columnOffset;
+    };
+
+    var offsetRowPosition = function(percent, rowHeight, rowIndex) {
+      var rowOffset = rowHeight * rowIndex;
+      return percent * rowHeight + rowOffset;
+    };
+
+    var x = offsetColumnPosition(point[0], columnWidth, columnIndex);
+    var y = offsetRowPosition(point[1], rowHeight, rowIndex);
+
+    return [x, y];
+  };
+
+  var offsetPoints = function(lineGroups, offsetter) {
+    for (var i=0; i<lineGroups.length; i++) {
+      var lines = lineGroups[i];
+      for (var j=0; j<lines.length; j++) {
+        lines[j] = lines[j].map(function(point) {
+          return offsetter(point, j, i);
+        });
+      }
+    }
+  };
+
+  var buildPieces = function(rowCount, columnCount) {
     var rowHeight = height / rowCount;
     var columnWidth = width / columnCount;
+    var pieces = [];
 
-    for (var rowIndex=1; rowIndex < rowCount; rowIndex++) {
-      for (var columnIndex=0; columnIndex < columnCount; columnIndex++) {
-        var points = edgeDistributions();
+    var rows = buildDistributions(rowCount, columnCount);
+    offsetPoints(rows, function(point, j, i) {
+      return offsetPoint(point, j, i, columnWidth, rowHeight);
+    });
 
-        points = points.map(function(p) {
-          var columnOffset = columnWidth * columnIndex;
-          var x = p[0] * columnWidth + columnOffset;
-          var rowOffset = rowHeight * rowIndex;
-          var y = height - (p[1] * rowHeight + rowOffset);
+    var columns = buildDistributions(columnCount, rowCount);
+    offsetPoints(columns, function(point, j, i) {
+      return offsetPoint(transposePoint(point), i, j, columnWidth, rowHeight);
+    });
 
-          return [x, y];
-        });
+    for (var rowIndex = 1; rowIndex <= rowCount; rowIndex++) {
+      for (var columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+        var edges = [];
+        edges.push(rows[rowIndex - 1][columnIndex]);
+        edges.push(columns[columnIndex + 1][rowIndex - 1]);
+        edges.push(rows[rowIndex][columnIndex].slice().reverse());
+        edges.push(columns[columnIndex][rowIndex - 1].slice().reverse());
 
-        lines.push(points);
-
-        console.log("Line row " + rowIndex + ", column " + columnIndex + ": " + d3_shape.line().curve(d3_shape.curveBasis)(points));
+        pieces.push(edges);
       }
     }
 
-    return lines;
+    return pieces;
   };
 
-  var buildVerticalLines = function() {
-    var lines = [];
-    var rowHeight = height / rowCount;
-    var columnWidth = width / columnCount;
+  var d3CurvedLine = d3_shape.line().curve(d3_shape.curveBasis);
 
-    for (var columnIndex=1; columnIndex < columnCount; columnIndex++) {
-      for (var rowIndex=0; rowIndex < rowCount; rowIndex++) {
-        var points = edgeDistributions();
+  var piecePathData = function(piece) {
+    return piece.map(function(edge) {
+      return d3CurvedLine(edge);
+    }).join(" ");
+  };
 
-        points = points.map(function(p) {
-          var columnOffset = columnWidth * columnIndex;
-          var x = p[1] * columnWidth + columnOffset;
-          var rowOffset = rowHeight * rowIndex;
-          var y = height - (p[0] * rowHeight + rowOffset);
+  var buildPiecePaths = function(pieces) {
+    return pieces.map(function(piece) {
+      return svg.path(piecePathData(piece));
+    });
+  };
 
-          return [x, y];
-        });
+  // SVG helpers
+  var svg = {
+    openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + '" height="' + height + '">',
+    closeTag: '</svg>',
+    path: function(pathData) {
+      return '<path stroke-width="1" stroke="#000" fill="none" vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
+    }
+  };
 
-        lines.push(points);
-      }
+  $(function() {
+    var generate = function() {
+      var rowCount = parseInt($("#rowCount").val(), 10);
+      var columnCount = parseInt($("#columnCount").val(), 10);
+
+      var pieces = buildPieces(rowCount, columnCount);
+      var piecePaths = buildPiecePaths(pieces).join("");
+
+      var svgNode = [
+        svg.openTag,
+        piecePaths,
+        svg.closeTag
+      ].join("");
+
+      $("#container").empty().append($(svgNode));
     }
 
-    return lines;
-  };
+    $('input').change(generate);
 
-  var line = d3.svg.line().interpolate("basis");
-
-  var svg = d3.select("body").append("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("tabindex", 1);
-
-  svg.append("rect")
-      .attr("width", width)
-      .attr("height", height);
-
-  d3.select("#rowCount").on("change", changeRowCount);
-  d3.select("#columnCount").on("change", changeColumnCount);
-
-  rebuildLines();
+    generate();
+  });
 </script>
+
