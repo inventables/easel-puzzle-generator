@@ -174,9 +174,11 @@ var executor = function(args, success, failure) {
   var buildPaths = function(pointArrays) {
     var d3Line = d3_shape.line();
 
-    return pointArrays.map(function(pointArray) {
-      return svg.path(usingFills, d3Line(pointArray), "#999");
-    })
+    var data = pointArrays.map(function(pointArray) {
+      return d3Line(pointArray);
+    }).join(" ");
+
+    return svg.path(usingFills, data, "#999");
   };
 
   var clippedPieces = function(pieces) {
@@ -243,7 +245,7 @@ var executor = function(args, success, failure) {
           solution = solution.map(closePoints);
         }
 
-        solutions = solutions.concat(solution);
+        solutions.push(solution);
       }
       return solutions;
     };
@@ -284,14 +286,16 @@ var executor = function(args, success, failure) {
 
   var pieces = buildPieces();
   var piecePaths = buildPiecePaths(pieces).join("");
-  var clippedPieceLines = clippedPieces(pieces);
+  var clippedPieceLineGroups = clippedPieces(pieces);
+  var clippedPiecePaths = clippedPieceLineGroups.map(function(clippedPieceLines) {
+    return buildPaths(clippedPieceLines);
+  }).join("");
 
   success([
     svg.header,
     svg.openTag,
     svg.openGTag,
-    //buildPaths(shape.pointArrays),
-    buildPaths(clippedPieceLines),
+    clippedPiecePaths,
     piecePaths,
     svg.closeGTag,
     svg.closeTag
