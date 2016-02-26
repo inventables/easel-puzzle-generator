@@ -1,9 +1,10 @@
 var alert = function() {};
 
 var properties = [
-  {type: 'range', id: "Rows", value: 8, min: 1, max: 10, step: 1},
-  {type: 'range', id: "Columns", value: 10, min: 1, max: 10, step: 1},
+  {id: "Rows", type: 'range', value: 5, min: 1, max: 10, step: 1},
+  {id: "Columns", type: 'range', value: 5, min: 1, max: 10, step: 1},
   {id: "Shapes", type: "list", value: "fill", options: [["fill", "Fill"], ["stroke", "Outline"]]},
+  {id: "Spacing", type: "range", value: 0, min: 0, max: 1, step: 0.1}
 ];
 
 var executor = function(args, success, failure) {
@@ -11,6 +12,7 @@ var executor = function(args, success, failure) {
   var rowCount = params.Rows;
   var columnCount = params.Columns;
   var usingFills = params.Shapes === 'fill';
+  var spaceFactor = params.Spacing;
 
   var shape = args[1];
   var width = shape.right - shape.left;
@@ -157,7 +159,25 @@ var executor = function(args, success, failure) {
     return pieces;
   };
 
+  var d3StraightLine = d3_shape.line();
   var d3CurvedLine = d3_shape.line().curve(d3_shape.curveBasis);
+
+  var spacePath = function(path, index) {
+    if (spaceFactor === 0) {
+      return path;
+    }
+
+    var rowIndex = Math.floor(index / columnCount);
+    var columnIndex = index % columnCount;
+
+    var rowSpacing = (height / rowCount) * spaceFactor;
+    var colSpacing = (width / columnCount) * spaceFactor;
+
+    var openG = '<g transform="translate(' + colSpacing * columnIndex + ',' + rowSpacing * rowIndex + ')">'
+    var closeG = '</g>';
+
+    return openG + path + closeG;
+  }
 
   var piecePathData = function(piece) {
     return piece.map(function(edge) {
@@ -166,19 +186,21 @@ var executor = function(args, success, failure) {
   };
 
   var buildPiecePaths = function(pieces) {
-    return pieces.map(function(piece) {
-      return svg.path(false, piecePathData(piece), "#000");
+    var path;
+    return pieces.map(function(piece, index) {
+      path = svg.path(false, piecePathData(piece), "#000");
+      return spacePath(path, index);
     });
   };
 
-  var buildPaths = function(pointArrays) {
-    var d3Line = d3_shape.line();
-
+  var buildPaths = function(pointArrays, index) {
     var data = pointArrays.map(function(pointArray) {
-      return d3Line(pointArray);
+      return d3StraightLine(pointArray);
     }).join(" ");
 
-    return svg.path(usingFills, data, "#999");
+    var path = svg.path(usingFills, data, "#999");
+
+    return spacePath(path, index);
   };
 
   var clippedPieces = function(pieces) {
@@ -267,13 +289,19 @@ var executor = function(args, success, failure) {
     return intersect(pieceLines, shape.pointArrays);
   };
 
+  var horizontalSpacing = (width / columnCount) * spaceFactor * (columnCount - 1);
+  var viewWidth = width + horizontalSpacing;
+  var verticalSpacing = (height / rowCount) * spaceFactor * (rowCount - 1);
+  var viewHeight = height + verticalSpacing;
+
   // SVG helpers
   var svg = {
     header: '<?xml version="1.0" standalone="no"?>',
-    openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + width + 'in" height="' + height + 'in"' +
-               ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + width + ' ' + height + '">',
+    openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + viewWidth + 'in" height="' + viewHeight + 'in"' +
+               ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + viewWidth + ' ' + viewHeight + '">',
     closeTag: '</svg>',
-    openGTag: '<g transform="translate(0,' + (shape.top + shape.bottom) + ') scale(1,-1)">',
+    openGTag: '<g transform="translate(0,' + (shape.top + shape.bottom + verticalSpacing) + ') scale(1,-1)">',
+    //openGTag: '<g>',
     closeGTag: '</g>',
     path: function(isFill, pathData, color) {
       var strokeFill = [color, 'none'];
@@ -287,8 +315,8 @@ var executor = function(args, success, failure) {
   var pieces = buildPieces();
   var piecePaths = buildPiecePaths(pieces).join("");
   var clippedPieceLineGroups = clippedPieces(pieces);
-  var clippedPiecePaths = clippedPieceLineGroups.map(function(clippedPieceLines) {
-    return buildPaths(clippedPieceLines);
+  var clippedPiecePaths = clippedPieceLineGroups.map(function(clippedPieceLines, index) {
+    return buildPaths(clippedPieceLines, index);
   }).join("");
 
   success([
