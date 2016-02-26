@@ -1,6 +1,4 @@
-var alert = function() {
-
-}
+var alert = function() {};
 
 var properties = [
   {type: 'range', id: "Rows", value: 8, min: 1, max: 10, step: 1},
