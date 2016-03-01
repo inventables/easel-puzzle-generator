@@ -185,12 +185,22 @@ var executor = function(args, success, failure) {
     }).join(" ");
   };
 
-  var buildPiecePaths = function(pieces) {
-    var path;
-    return pieces.map(function(piece, index) {
-      path = svg.path(false, piecePathData(piece), "#000");
-      return spacePath(path, index);
+  //var buildPiecePaths = function(pieces) {
+  //  var path;
+  //  return pieces.map(function(piece, index) {
+  //    path = svg.path(false, piecePathData(piece), "#000");
+  //    return spacePath(path, index);
+  //  });
+  //};
+
+  var buildPiecePaths = function(points, index) {
+    points = points.map(function(point) {
+      return [point.x, point.y];
     });
+
+    var path = svg.path(false, d3StraightLine(points), "#000");
+
+    return spacePath(path, index);
   };
 
   var buildPaths = function(pointArrays, index) {
@@ -203,7 +213,7 @@ var executor = function(args, success, failure) {
     return spacePath(path, index);
   };
 
-  var clippedPieces = function(pieces) {
+  var clippedPieces = function(pieceLines) {
     var scale = 32768; // Clipper can only deal with ints
 
     var scaleUpLine = function(line) {
@@ -272,10 +282,14 @@ var executor = function(args, success, failure) {
       return solutions;
     };
 
+    return intersect(pieceLines, shape.pointArrays);
+  };
+
+  var buildPieceLineGroups = function(pieces) {
     var polylineGenerator = EASEL.pathPolylineGenerator(0.001, EASEL.matrix());
     var piecePathDataStrings = pieces.map(piecePathData);
 
-    var pieceLines = piecePathDataStrings.map(function(dataString) {
+    return piecePathDataStrings.map(function(dataString) {
       var controlPoints = EASEL.pathToControlPoints(EASEL.pathStringParser.parse(dataString));
       var polylines = polylineGenerator.toPolylines(controlPoints);
 
@@ -285,8 +299,6 @@ var executor = function(args, success, failure) {
       }
       return points;
     });
-
-    return intersect(pieceLines, shape.pointArrays);
   };
 
   var horizontalSpacing = (width / columnCount) * spaceFactor * (columnCount - 1);
@@ -313,8 +325,12 @@ var executor = function(args, success, failure) {
   };
 
   var pieces = buildPieces();
-  var piecePaths = buildPiecePaths(pieces).join("");
-  var clippedPieceLineGroups = clippedPieces(pieces);
+  //var piecePaths = buildPiecePaths(pieces).join("");
+  var pieceLines = buildPieceLineGroups(pieces);
+  var piecePaths = pieceLines.map(function(pieceLine, index) {
+    return buildPiecePaths(pieceLine, index);
+  }).join("");
+  var clippedPieceLineGroups = clippedPieces(pieceLines);
   var clippedPiecePaths = clippedPieceLineGroups.map(function(clippedPieceLines, index) {
     return buildPaths(clippedPieceLines, index);
   }).join("");
