@@ -194,13 +194,18 @@ var executor = function(args, success, failure) {
   //};
 
   var buildPiecePaths = function(points, index) {
+    var path;
+
     points = points.map(function(point) {
       return [point.x, point.y];
     });
 
-    var path = svg.path(false, d3StraightLine(points), "#000");
-
-    return spacePath(path, index);
+    if (points.length > 0) {
+      path = svg.path(false, d3StraightLine(points), "#000");
+      return spacePath(path, index);
+    } else {
+      return "";
+    }
   };
 
   var buildPaths = function(pointArrays, index) {
@@ -271,15 +276,13 @@ var executor = function(args, success, failure) {
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
-        if (solution.length > 0) {
-          solution = solution.map(scaleDownLine);
+        solution = solution.map(scaleDownLine);
 
-          if (usingFills) {
-            solution = solution.map(closePoints);
-          }
-
-          solutions.push(solution);
+        if (usingFills) {
+          solution = solution.map(closePoints);
         }
+
+        solutions.push(solution);
       }
       return solutions;
     };
