@@ -209,13 +209,18 @@ var executor = function(args, success, failure) {
   };
 
   var buildPaths = function(pointArrays, index) {
+    var path;
+
     var data = pointArrays.map(function(pointArray) {
       return d3StraightLine(pointArray);
     }).join(" ");
 
-    var path = svg.path(usingFills, data, "#999");
-
-    return spacePath(path, index);
+    if (pointArrays.length > 0) {
+      path = svg.path(usingFills, data, "#999");
+      return spacePath(path, index);
+    } else {
+      return "";
+    }
   };
 
   var clippedPieces = function(pieceLines) {
