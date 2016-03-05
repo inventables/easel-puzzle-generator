@@ -3,7 +3,7 @@ var alert = function() {};
 var properties = [
   {id: "Rows", type: 'range', value: 5, min: 1, max: 10, step: 1},
   {id: "Columns", type: 'range', value: 5, min: 1, max: 10, step: 1},
-  {id: "Shapes", type: "list", value: "fill", options: [["fill", "Fill"], ["stroke", "Outline"]]},
+  {id: "Shapes", type: "list", value: "fill", options: [["fill", "Fill"]]},
   {id: "Spacing", type: "range", value: 0, min: 0, max: 1, step: 0.1}
 ];
 
