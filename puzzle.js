@@ -271,13 +271,15 @@ var executor = function(args, success, failure) {
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
-        solution = solution.map(scaleDownLine);
+        if (solution.length > 0) {
+          solution = solution.map(scaleDownLine);
 
-        if (usingFills) {
-          solution = solution.map(closePoints);
+          if (usingFills) {
+            solution = solution.map(closePoints);
+          }
+
+          solutions.push(solution);
         }
-
-        solutions.push(solution);
       }
       return solutions;
     };
