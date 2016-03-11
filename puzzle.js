@@ -219,10 +219,11 @@ var executor = function(args, success, failure) {
 
     var scaleUpLine = function(line) {
       return line.map(function(point) {
-        if (point.x)
+        if (point.x) {
           return {X: point.x * scale, Y: point.y * scale};
-        else
+        } else {
           return {X: point[0] * scale, Y: point[1] * scale};
+        }
       });
     };
 
