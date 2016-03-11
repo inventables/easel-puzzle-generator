@@ -159,9 +159,6 @@ var executor = function(args, success, failure) {
     return pieces;
   };
 
-  var d3StraightLine = d3_shape.line();
-  var d3CurvedLine = d3_shape.line().curve(d3_shape.curveBasis);
-
   var spacePath = function(path, index) {
     if (spaceFactor === 0) {
       return path;
@@ -179,20 +176,14 @@ var executor = function(args, success, failure) {
     return openG + path + closeG;
   }
 
+  var d3CurvedLine = d3_shape.line().curve(d3_shape.curveBasis);
   var piecePathData = function(piece) {
     return piece.map(function(edge) {
       return d3CurvedLine(edge);
     }).join(" ");
   };
 
-  //var buildPiecePaths = function(pieces) {
-  //  var path;
-  //  return pieces.map(function(piece, index) {
-  //    path = svg.path(false, piecePathData(piece), "#000");
-  //    return spacePath(path, index);
-  //  });
-  //};
-
+  var d3StraightLine = d3_shape.line();
   var buildPiecePaths = function(points, index) {
     var path;
 
@@ -268,27 +259,20 @@ var executor = function(args, success, failure) {
         var cpr = new ClipperLib.Clipper();
         var scaledUpPieceLine = scaledUpPieceLines[i];
 
-        //if (! usingFills) {
-        //  // The clipper loses the last segment, so add a fake point for it to lose instead
-        //  var lastPoint = scaledUpPieceLine[scaledUpPieceLine.length - 1]
-        //  scaledUpPieceLine.push(lastPoint)
-        //}
-
         var solution = new ClipperLib.Paths();
 
         cpr.AddPath(scaledUpPieceLine, ClipperLib.PolyType.ptClip, true);
-        cpr.AddPaths(scaledUpShapeLines, ClipperLib.PolyType.ptSubject, usingFills);
+        cpr.AddPaths(scaledUpShapeLines, ClipperLib.PolyType.ptSubject, true);
 
         cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
 
         solution = solution.map(scaleDownLine);
 
-        if (usingFills) {
-          solution = solution.map(closePoints);
-        }
+        solution = solution.map(closePoints);
 
         solutions.push(solution);
       }
+
       return solutions;
     };
 
@@ -323,7 +307,6 @@ var executor = function(args, success, failure) {
                ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + viewWidth + ' ' + viewHeight + '">',
     closeTag: '</svg>',
     openGTag: '<g transform="translate(0,' + (shape.top + shape.bottom + verticalSpacing) + ') scale(1,-1)">',
-    //openGTag: '<g>',
     closeGTag: '</g>',
     path: function(isFill, pathData, color) {
       var strokeFill = [color, 'none'];
@@ -335,7 +318,6 @@ var executor = function(args, success, failure) {
   };
 
   var pieces = buildPieces();
-  //var piecePaths = buildPiecePaths(pieces).join("");
   var pieceLines = buildPieceLineGroups(pieces);
   var piecePaths = pieceLines.map(function(pieceLine, index) {
     return buildPiecePaths(pieceLine, index);
