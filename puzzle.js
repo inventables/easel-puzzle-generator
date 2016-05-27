@@ -3,20 +3,58 @@ var alert = function() {};
 var properties = [
   {id: "Rows", type: 'range', value: 5, min: 1, max: 10, step: 1},
   {id: "Columns", type: 'range', value: 5, min: 1, max: 10, step: 1},
-  {id: "Shapes", type: "list", value: "fill", options: [["fill", "Fill"]]},
-  {id: "Spacing", type: "range", value: 0, min: 0, max: 1, step: 0.1}
+  {id: "Separate Pieces", type: "boolean", value: false}
 ];
 
 var executor = function(args, success, failure) {
-  var params = args[0];
+  var params = args.params;
   var rowCount = params.Rows;
   var columnCount = params.Columns;
   var usingFills = params.Shapes === 'fill';
-  var spaceFactor = params.Spacing;
+  var separatePieces = params['Separate Pieces'];
 
-  var shape = args[1];
-  var width = shape.right - shape.left;
-  var height = shape.top - shape.bottom;
+  var bitWidth, bitUnit;
+
+  var getSelectedVolumes = function(volumes, selectedVolumeIds) {
+    var selectedVolumes = [];
+    var volume;
+    for (var i = 0; i < volumes.length; i++) {
+      volume = volumes[i];
+      if (selectedVolumeIds.indexOf(volume.id) !== -1) {
+        selectedVolumes.push(volume);
+      }
+    }
+    return selectedVolumes;
+  };
+
+  var toInches = function(width, unit) {
+    return unit === "in" ? width : 0.0393701;
+  };
+
+  if (args.bitParams.useDetailBit) {
+    // Detail bit always cuts outlines if in use (for now)
+    bitWidth = args.bitParams.detailBit.width;
+    bitUnit = args.bitParams.detailBit.unit;
+  } else {
+    bitWidth = args.bitParams.bit.width;
+    bitUnit = args.bitParams.bit.unit;
+  }
+
+  var selectedVolumes = getSelectedVolumes(args.volumes, args.selectedVolumeIds);
+
+  if (selectedVolumes.length === 0) {
+    success([]);
+  }
+
+  var firstShapeDepth = selectedVolumes[0].cut.depth;
+
+  var right = EASEL.volumeHelper.boundingBoxRight(selectedVolumes);
+  var left = EASEL.volumeHelper.boundingBoxLeft(selectedVolumes);
+  var top = EASEL.volumeHelper.boundingBoxTop(selectedVolumes);
+  var bottom = EASEL.volumeHelper.boundingBoxBottom(selectedVolumes);
+
+  var width = right - left;
+  var height = top - bottom;
 
   // Returns 6 points representing the shape of one edge of a puzzle piece.
   // Point coordinates are expressed as percentage distances across the width
@@ -103,12 +141,12 @@ var executor = function(args, success, failure) {
 
   var offsetPoint = function(point, columnIndex, rowIndex, columnWidth, rowHeight) {
     var offsetColumnPosition = function(percent, columnWidth, columnIndex) {
-      var columnOffset = columnWidth * columnIndex + shape.left;
+      var columnOffset = columnWidth * columnIndex + left;
       return percent * columnWidth + columnOffset;
     };
 
     var offsetRowPosition = function(percent, rowHeight, rowIndex) {
-      var rowOffset = rowHeight * rowIndex + shape.bottom;
+      var rowOffset = rowHeight * rowIndex + bottom;
       return percent * rowHeight + rowOffset;
     };
 
@@ -159,23 +197,6 @@ var executor = function(args, success, failure) {
     return pieces;
   };
 
-  var spacePath = function(path, index) {
-    if (spaceFactor === 0) {
-      return path;
-    }
-
-    var rowIndex = Math.floor(index / columnCount);
-    var columnIndex = index % columnCount;
-
-    var rowSpacing = (height / rowCount) * spaceFactor;
-    var colSpacing = (width / columnCount) * spaceFactor;
-
-    var openG = '<g transform="translate(' + colSpacing * columnIndex + ',' + rowSpacing * rowIndex + ')">'
-    var closeG = '</g>';
-
-    return openG + path + closeG;
-  }
-
   var d3CurvedLine = d3_shape.line().curve(d3_shape.curveBasis);
   var piecePathData = function(piece) {
     return piece.map(function(edge) {
@@ -184,20 +205,6 @@ var executor = function(args, success, failure) {
   };
 
   var d3StraightLine = d3_shape.line();
-  var buildPiecePaths = function(points, index) {
-    var path;
-
-    points = points.map(function(point) {
-      return [point.x, point.y];
-    });
-
-    if (points.length > 0) {
-      path = svg.path(false, d3StraightLine(points), "#000");
-      return spacePath(path, index);
-    } else {
-      return "";
-    }
-  };
 
   var buildPaths = function(pointArrays, index) {
     var path;
@@ -215,127 +222,132 @@ var executor = function(args, success, failure) {
   };
 
   var clippedPieces = function(pieceLines) {
-    var scale = 32768; // Clipper can only deal with ints
+    var closeVolume = function(pathVolume) {
+      var firstPoint, lastPoint, points;
 
-    var scaleUpLine = function(line) {
-      return line.map(function(point) {
-        if (point.x) {
-          return {X: point.x * scale, Y: point.y * scale};
-        } else {
-          return {X: point[0] * scale, Y: point[1] * scale};
-        }
-      });
-    };
+      if (pathVolume === null) {
+        return null;
+      }
 
-    var scaleDownLine = function(line) {
-      return line.map(function(point) {
-        return [point.X / scale, point.Y / scale];
-      });
-    };
+      points = pathVolume.shape.points;
 
-    var closePoints = function(points) {
-      var firstPoint, lastPoint;
-
-      if (points.length === 0) {
-        return points;
+      if (points.length < 2) {
+        return pathVolume;
       }
 
       firstPoint = points[0];
       lastPoint = points[points.length - 1];
 
-      if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+      if (firstPoint.x !== lastPoint.x || firstPoint.y !== lastPoint.y || firstPoint.lh !== lastPoint.lh || firstPoint.rh !== lastPoint.rh) {
         points.push(firstPoint);
       }
 
-      return points;
+      return pathVolume;
     }
 
-    var intersect = function(pieceLines, shapeLines) {
-      var scaledUpPieceLines = pieceLines.map(scaleUpLine);
-      var scaledUpShapeLines = shapeLines.map(scaleUpLine);
-
+    var intersect = function(pieceVolumes, selectedVolumes) {
       var solutions = [];
+      var clipVolume;
 
-      for (var i = 0; i < scaledUpPieceLines.length; i++) {
-        var cpr = new ClipperLib.Clipper();
-        var scaledUpPieceLine = scaledUpPieceLines[i];
+      var clippedVolumes = pieceVolumes.map(function(pieceVolume) {
+        clipVolume = EASEL.volumeHelper.intersect(selectedVolumes, [pieceVolume]);
+        if (clipVolume !== null) {
+          clipVolume.cut = {
+            type: "fill",
+            depth: firstShapeDepth
+          };
+        }
+        return clipVolume;
+      });
 
-        var solution = new ClipperLib.Paths();
+      return clippedVolumes.map(closeVolume);
+    }
 
-        cpr.AddPath(scaledUpPieceLine, ClipperLib.PolyType.ptClip, true);
-        cpr.AddPaths(scaledUpShapeLines, ClipperLib.PolyType.ptSubject, true);
-
-        cpr.Execute(ClipperLib.ClipType.ctIntersection, solution);
-
-        solution = solution.map(scaleDownLine);
-
-        solution = solution.map(closePoints);
-
-        solutions.push(solution);
-      }
-
-      return solutions;
-    };
-
-    return intersect(pieceLines, shape.pointArrays);
+    return intersect(pieceLines, selectedVolumes);
   };
 
-  var buildPieceLineGroups = function(pieces) {
-    var polylineGenerator = EASEL.pathPolylineGenerator(0.001, EASEL.matrix());
+  var buildPieceVolumes = function(pieces) {
     var piecePathDataStrings = pieces.map(piecePathData);
 
     return piecePathDataStrings.map(function(dataString) {
-      var controlPoints = EASEL.pathToControlPoints(EASEL.pathStringParser.parse(dataString));
-      var polylines = polylineGenerator.toPolylines(controlPoints);
+      var volume = EASEL.pathUtils.fromSvgPathDataString(dataString);
 
-      var points = [];
-      for (var i = 0; i < polylines.length; i++) {
-        points = points.concat(polylines[i]);
+      volume.cut = {
+        type: "outline",
+        outlineStyle: "outside",
+        tabPreference: false,
+        depth: args.material.dimensions.z
+      };
+
+      var points = [], subpoints;
+      for (var i = 0; i < volume.shape.points.length; i++) {
+        subpoints = volume.shape.points[i];
+
+        if (i > 0) {
+          subpoints.shift(); // path begins where previous one ended
+        }
+        points = points.concat(subpoints);
       }
-      return points;
+
+      volume.shape.points = [points];
+
+      return volume;
     });
   };
 
-  var horizontalSpacing = (width / columnCount) * spaceFactor * (columnCount - 1);
-  var viewWidth = width + horizontalSpacing;
-  var verticalSpacing = (height / rowCount) * spaceFactor * (rowCount - 1);
-  var viewHeight = height + verticalSpacing;
+  var spaceOut = function(volumes) {
+    if (!separatePieces) return;
 
-  // SVG helpers
-  var svg = {
-    header: '<?xml version="1.0" standalone="no"?>',
-    openTag: '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="' + viewWidth + 'in" height="' + viewHeight + 'in"' +
-               ' viewBox="' + shape.left + ' ' + shape.bottom + ' ' + viewWidth + ' ' + viewHeight + '">',
-    closeTag: '</svg>',
-    openGTag: '<g transform="translate(0,' + (shape.top + shape.bottom + verticalSpacing) + ') scale(1,-1)">',
-    closeGTag: '</g>',
-    path: function(isFill, pathData, color) {
-      var strokeFill = [color, 'none'];
-      if (isFill) {
-        strokeFill.reverse();
-      }
-      return '<path stroke-width="1" stroke="' + strokeFill[0] + '" fill="' + strokeFill[1] + '" vector-effect="non-scaling-stroke" d="' + pathData + '"/>';
+    var horizontalPieceGap = toInches(bitWidth, bitUnit) + (width / columnCount) * 0.5;
+    var verticalPieceGap = toInches(bitWidth, bitUnit) + (width / columnCount) * 0.5;
+
+    var volume, rowIndex, columnIndex;
+
+    for (var i = 0; i < volumes.length; i++) {
+      volume = volumes[i];
+
+      if (volume === null) continue;
+
+      rowIndex = Math.floor(i / columnCount);
+      columnIndex = i % columnCount;
+
+      volume.shape.center.x += horizontalPieceGap * columnIndex;
+      volume.shape.center.y += verticalPieceGap * rowIndex;
     }
   };
 
-  var pieces = buildPieces();
-  var pieceLines = buildPieceLineGroups(pieces);
-  var piecePaths = pieceLines.map(function(pieceLine, index) {
-    return buildPiecePaths(pieceLine, index);
-  }).join("");
-  var clippedPieceLineGroups = clippedPieces(pieceLines);
-  var clippedPiecePaths = clippedPieceLineGroups.map(function(clippedPieceLines, index) {
-    return buildPaths(clippedPieceLines, index);
-  }).join("");
+  var removeSelectedVolumes = function() {
+    var volume, volumesToRemove = [];
 
-  success([
-    svg.header,
-    svg.openTag,
-    svg.openGTag,
-    clippedPiecePaths,
-    piecePaths,
-    svg.closeGTag,
-    svg.closeTag
-  ].join(""));
+    for (var i = 0; i < selectedVolumes.length; i++) {
+      volume = selectedVolumes[i];
+
+      volumesToRemove.push({
+        id: volume.id
+      });
+    }
+
+    return volumesToRemove;
+  }
+
+  var generate = function() {
+    var pieces = buildPieces();
+    var pieceVolumes = buildPieceVolumes(pieces);
+    var clippedPieceVolumes = clippedPieces(pieceVolumes);
+
+    spaceOut(pieceVolumes);
+    spaceOut(clippedPieceVolumes);
+
+    var nonEmptyClippedPieceVolumes = clippedPieceVolumes.filter(function(volume) {
+      return volume !== null;
+    });
+
+
+    var removedVolumes = removeSelectedVolumes();
+
+    success(nonEmptyClippedPieceVolumes.concat(pieceVolumes).concat(removedVolumes));
+  };
+
+  generate();
 };
 
