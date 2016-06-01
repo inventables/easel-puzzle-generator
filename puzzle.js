@@ -1,5 +1,3 @@
-var alert = function() {};
-
 var properties = [
   {id: "Rows", type: 'range', value: 5, min: 1, max: 10, step: 1},
   {id: "Columns", type: 'range', value: 5, min: 1, max: 10, step: 1},
